@@ -1,111 +1,189 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(new MyApp());
+void main() => runApp(new ContainerApp());
 
+// 布局学习
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
-      title: 'Welcome to Flutter',
-      home: new RandomWords()
-    );
-  }
-}
-
-class RandomWords extends StatefulWidget {
-  @override
-  createState() => new RandomWordsState();
-}
-
-class RandomWordsState extends State<RandomWords> {
-
-  var start = 0;
-
-  final _suggestions = <String>[];
-
-  final _saved = new Set<String>();
-
-  final _biggerFont = const TextStyle(fontSize: 18.0);
-
-  @override
-  Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(
-        title: new Text('Startup Name Generator'),
-        actions: <Widget>[
-          new IconButton(icon: new Icon(Icons.list), onPressed: _pushSaved)
+    Widget titleSection = new Container(
+      padding: const EdgeInsets.all(32.0),
+      child: new Row(
+        children: [
+          new Expanded(
+            child: new Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                new Container(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: new Text(
+                    'Oeschien Lake Campground',
+                    style: new TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                new Text(
+                  'Kandersteg, Switzerland',
+                  style: new TextStyle(
+                    color: Colors.grey[500],
+                  ),
+                )
+              ],
+            ),
+          ),
+          new Icon(
+            Icons.star,
+            color: Colors.red[500],
+          ),
+          new Text('41'),
         ],
       ),
-      body: _buildSuggestions(),
     );
-  }
 
-  Widget _buildSuggestions() {
-    return new ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemBuilder: (context, i) {
-        if (i.isOdd) return new Divider();
-        final index = i ~/ 2;
-        if (index >= _suggestions.length) {
-          var i = start;
-          for (; i < start + 10; i ++) {
-            _suggestions.add(i.toString());
-          }
-          start += 10;
-        }
-        return _buildRow(_suggestions[index]);
-      },
-    );
-  }
-
-  Widget _buildRow(String text) {
-    final alreadySaved = _saved.contains(text);
-    return new ListTile(
-      title: new Text(
-        'title-'+text,
-        style: _biggerFont
-      ),
-      trailing: new Icon(
-        alreadySaved ? Icons.favorite : Icons.favorite_border,
-        color: alreadySaved ? Colors.red : null,
-      ),
-      onTap: () {
-        setState(
-          () {
-            if (alreadySaved) {
-              _saved.remove(text);
-            } else {
-              _saved.add(text);
-            }
-          }
-        );
-      },
-    );
-  }
-
-  void _pushSaved() {
-    Navigator.of(context).push(new MaterialPageRoute(
-      builder: (context) {
-        final tiles = _saved.map((text) {
-          return new ListTile(
-            title: new Text(
-              'title-'+text,
-              style: _biggerFont,
+    Column buildButtonColumn(IconData icon, String label) {
+      Color color = Theme.of(context).primaryColor;
+      return new Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          new Icon(icon, color: color),
+          new Container(
+            margin: const EdgeInsets.only(top: 8.0),
+            child: new Text(
+              label,
+              style: new TextStyle(
+                fontSize: 12.0,
+                fontWeight: FontWeight.w400,
+                color: color,
+              ),
             ),
-          );
-        });
-        final divided = ListTile.divideTiles(
-          context: context,
-          tiles: tiles
-        ).toList();
-        return new Scaffold(
-          appBar: new AppBar(
-            title: new Text('Saved Suggestions'),
+          )
+        ],
+      );
+    }
+
+    Widget buttonSection = new Container(
+      child: new Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          buildButtonColumn(Icons.call, 'CALL'),
+          buildButtonColumn(Icons.near_me, 'ROUTE'),
+          buildButtonColumn(Icons.share, 'SHARE'),
+        ],
+      ),
+    );
+
+    Widget textSection = new Container(
+      padding: const EdgeInsets.all(32.0),
+      child: new Text(
+        '''
+        Lake Oeschinen lies at the foot of the Blüemlisalp in the Bernese Alps. Situated 1,578 meters above sea level, it is one of the larger Alpine Lakes. A gondola ride from Kandersteg, followed by a half-hour walk through pastures and pine forest, leads you to the lake, which warms to 20 degrees Celsius in the summer. Activities enjoyed here include rowing, and riding the summer toboggan run.
+        ''',
+        softWrap: true,
+      ),
+    );
+
+    return new MaterialApp(
+      title: 'Flutter Demo',
+      home: new Scaffold(
+        appBar: new AppBar(
+          title: new Text('Top Lakes'),
+        ),
+        body: new ListView(
+          children: <Widget>[
+            new Image.asset(
+              'images/lake.jpg',
+              width: 600.0,
+              height: 240.0,
+              fit: BoxFit.cover,
+            ),
+            titleSection,
+            buttonSection,
+            textSection
+          ],
+        ),
+      )
+    );
+  }
+}
+
+// 容器学习
+class ContainerApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var container = new Container(
+      decoration: new BoxDecoration(
+        color: Colors.black26,
+      ),
+      child: new Column(
+        children: <Widget>[
+          new Row(
+            children: <Widget>[
+              new Expanded(
+                child: new Container(
+                  decoration: new BoxDecoration(
+                    border: new Border.all(width: 10.0, color: Colors.black38),
+                    borderRadius: 
+                        const BorderRadius.all(const Radius.circular(8.0)),
+                  ),
+                  margin: const EdgeInsets.all(4.0),
+                  child: new Image.asset('images/container/pic1.jpg'),
+                ),
+              ),
+              new Expanded(
+                child: new Container(
+                  decoration: new BoxDecoration(
+                    border: new Border.all(width: 10.0, color: Colors.black38),
+                    borderRadius: 
+                      const BorderRadius.all(const Radius.circular(8.0)),
+                  ),
+                  margin: const EdgeInsets.all(4.0),
+                  child: new Image.asset('images/container/pic2.jpg'),
+                ),
+              )
+            ],
           ),
-          body: new ListView(children: divided),
-        );
-      }
-    ));
+          new Row(
+            children: <Widget>[
+              new Expanded(
+                child: new Container(
+                  decoration: new BoxDecoration(
+                    border: new Border.all(width: 10.0, color: Colors.black38),
+                    borderRadius: 
+                        const BorderRadius.all(const Radius.circular(8.0)),
+                  ),
+                  margin: const EdgeInsets.all(4.0),
+                  child: new Image.asset('images/container/pic3.jpg'),
+                ),
+              ),
+              new Expanded(
+                child: new Container(
+                  decoration: new BoxDecoration(
+                    border: new Border.all(width: 10.0, color: Colors.black38),
+                    borderRadius: 
+                      const BorderRadius.all(const Radius.circular(8.0)),
+                  ),
+                  margin: const EdgeInsets.all(4.0),
+                  child: new Image.asset('images/container/pic4.jpg'),
+                ),
+              )
+            ],
+          ),
+        ],
+      ),
+    );
+    return new MaterialApp(
+      title: 'Flutter Demo',
+      home: new Scaffold(
+        appBar: new AppBar(
+          title: new Text('Flutter Demo'),
+        ),
+        body: new Center(
+          child: container,
+        ),
+      ),
+    );
+    
   }
 }
