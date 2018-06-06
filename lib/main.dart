@@ -1,189 +1,181 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'dart:async';
 
-void main() => runApp(new ContainerApp());
+void main() => runApp(new TtsApp());
 
-// 布局学习
-class MyApp extends StatelessWidget {
+class TtsApp extends StatefulWidget {
+  @override
+  TtsAppState createState() => new TtsAppState();
+}
+
+enum TtsState { playing, stopped }
+
+class TtsAppState extends State<TtsApp> {
+  FlutterTts flutterTts;
+  List<dynamic> languages;
+
+  String _newVoiceText;
+
+  TtsState ttsState = TtsState.stopped;
+
+  get isPlaying => ttsState == TtsState.playing;
+  get isStopped => ttsState == TtsState.stopped;
+
+  @override
+  void initState() {
+    super.initState();
+    initTts();
+  }
+
+  initTts() async {
+    flutterTts = new FlutterTts();
+
+    flutterTts.setStartHandler(() {
+      setState(() {
+        ttsState = TtsState.playing;     
+      });
+    });
+
+    flutterTts.setCompletionHandler(() {
+      setState(() {
+         ttsState = TtsState.stopped;     
+      });
+    });
+
+    flutterTts.setErrorHandler((msg) {
+      setState(() {
+         ttsState = TtsState.stopped;     
+      });
+    });
+
+    languages = await flutterTts.getLanguages;
+    if (languages != null) setState(() => languages);
+  }
+
+  Future _speak() async {
+    var result = await flutterTts.speak(_newVoiceText);
+    if (result == 1) setState(() => ttsState = TtsState.playing);
+  }
+
+  Future _stop() async {
+    var result = await flutterTts.stop();
+    if (result == 1) setState(() => ttsState = TtsState.stopped);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    flutterTts.stop();
+  }
+
+  String language;
+
+  List<DropdownMenuItem<String>> getDropDownMenuItems() {
+    List<DropdownMenuItem<String>> items = new List();
+    for (String type in languages) {
+      items.add(new DropdownMenuItem(value: type,child: new Text(type)));
+    }
+    return items;
+  }
+
+  void changedDropDownItem(String selectedType) {
+    setState(() {
+       language = selectedType;
+       flutterTts.setLanguage(language);  
+    });
+  }
+
+  void _onChange(String text) {
+    setState(() {
+       _newVoiceText = text;   
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    Widget titleSection = new Container(
-      padding: const EdgeInsets.all(32.0),
-      child: new Row(
-        children: [
-          new Expanded(
-            child: new Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                new Container(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: new Text(
-                    'Oeschien Lake Campground',
-                    style: new TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                new Text(
-                  'Kandersteg, Switzerland',
-                  style: new TextStyle(
-                    color: Colors.grey[500],
-                  ),
-                )
-              ],
-            ),
-          ),
-          new Icon(
-            Icons.star,
-            color: Colors.red[500],
-          ),
-          new Text('41'),
-        ],
-      ),
-    );
-
-    Column buildButtonColumn(IconData icon, String label) {
-      Color color = Theme.of(context).primaryColor;
-      return new Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          new Icon(icon, color: color),
-          new Container(
-            margin: const EdgeInsets.only(top: 8.0),
-            child: new Text(
-              label,
-              style: new TextStyle(
-                fontSize: 12.0,
-                fontWeight: FontWeight.w400,
-                color: color,
-              ),
-            ),
-          )
-        ],
-      );
-    }
-
-    Widget buttonSection = new Container(
-      child: new Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[
-          buildButtonColumn(Icons.call, 'CALL'),
-          buildButtonColumn(Icons.near_me, 'ROUTE'),
-          buildButtonColumn(Icons.share, 'SHARE'),
-        ],
-      ),
-    );
-
-    Widget textSection = new Container(
-      padding: const EdgeInsets.all(32.0),
-      child: new Text(
-        '''
-        Lake Oeschinen lies at the foot of the Blüemlisalp in the Bernese Alps. Situated 1,578 meters above sea level, it is one of the larger Alpine Lakes. A gondola ride from Kandersteg, followed by a half-hour walk through pastures and pine forest, leads you to the lake, which warms to 20 degrees Celsius in the summer. Activities enjoyed here include rowing, and riding the summer toboggan run.
-        ''',
-        softWrap: true,
-      ),
-    );
-
     return new MaterialApp(
-      title: 'Flutter Demo',
       home: new Scaffold(
         appBar: new AppBar(
-          title: new Text('Top Lakes'),
+          title: new Text('Flutter TTS'),
         ),
-        body: new ListView(
+        body: languages != null
+            ? _buildRowWithLanguages()
+            : _buildRowWithoutLanguages()        
+      ),
+    );
+  }
+
+  Widget _buildRowWithoutLanguages() => new Column(
+    children: <Widget>[
+      new Container(
+        alignment: Alignment.topCenter,
+        padding: new EdgeInsets.only(top: 25.0, left: 25.0, right: 25.0),
+        child: new TextField(
+          onChanged: (String value) {
+            _onChange(value);
+          },
+        ),
+      ),
+      new Container(
+        padding: new EdgeInsets.only(top: 200.0),
+        child: new Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            new Image.asset(
-              'images/lake.jpg',
-              width: 600.0,
-              height: 240.0,
-              fit: BoxFit.cover,
+            new IconButton(
+              icon: new Icon(Icons.play_arrow),
+              onPressed: _newVoiceText == null || isPlaying
+                  ? null
+                  : () => _speak(),
+              color: Colors.green,
+              splashColor: Colors.greenAccent,
             ),
-            titleSection,
-            buttonSection,
-            textSection
+            new IconButton(
+              icon: new Icon(Icons.stop),
+              onPressed: isStopped ? null : () => _stop(),
+              color: Colors.red,
+              splashColor: Colors.redAccent,
+            ),
           ],
         ),
       )
-    );
-  }
-}
+    ],
+  );
 
-// 容器学习
-class ContainerApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    var container = new Container(
-      decoration: new BoxDecoration(
-        color: Colors.black26,
+  Widget _buildRowWithLanguages() => new Column(children: <Widget>[
+    new Container(
+      alignment: Alignment.topCenter,
+      padding: new EdgeInsets.only(top: 25.0, left: 25.0, right: 25.0),
+      child: new TextField(
+        onChanged: (String value) {
+          _onChange(value);
+        },
       ),
-      child: new Column(
+    ),
+    new Container(
+      padding: new EdgeInsets.only(top: 200.0),
+      child: new Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          new Row(
-            children: <Widget>[
-              new Expanded(
-                child: new Container(
-                  decoration: new BoxDecoration(
-                    border: new Border.all(width: 10.0, color: Colors.black38),
-                    borderRadius: 
-                        const BorderRadius.all(const Radius.circular(8.0)),
-                  ),
-                  margin: const EdgeInsets.all(4.0),
-                  child: new Image.asset('images/container/pic1.jpg'),
-                ),
-              ),
-              new Expanded(
-                child: new Container(
-                  decoration: new BoxDecoration(
-                    border: new Border.all(width: 10.0, color: Colors.black38),
-                    borderRadius: 
-                      const BorderRadius.all(const Radius.circular(8.0)),
-                  ),
-                  margin: const EdgeInsets.all(4.0),
-                  child: new Image.asset('images/container/pic2.jpg'),
-                ),
-              )
-            ],
+          new IconButton(
+            icon: new Icon(Icons.play_arrow),
+            onPressed: _newVoiceText == null || isPlaying ? null : () => _speak(),
+            color: Colors.green,
+            splashColor: Colors.greenAccent
           ),
-          new Row(
-            children: <Widget>[
-              new Expanded(
-                child: new Container(
-                  decoration: new BoxDecoration(
-                    border: new Border.all(width: 10.0, color: Colors.black38),
-                    borderRadius: 
-                        const BorderRadius.all(const Radius.circular(8.0)),
-                  ),
-                  margin: const EdgeInsets.all(4.0),
-                  child: new Image.asset('images/container/pic3.jpg'),
-                ),
-              ),
-              new Expanded(
-                child: new Container(
-                  decoration: new BoxDecoration(
-                    border: new Border.all(width: 10.0, color: Colors.black38),
-                    borderRadius: 
-                      const BorderRadius.all(const Radius.circular(8.0)),
-                  ),
-                  margin: const EdgeInsets.all(4.0),
-                  child: new Image.asset('images/container/pic4.jpg'),
-                ),
-              )
-            ],
+          new IconButton(
+            icon: new Icon(Icons.stop),
+            onPressed: isStopped ? null : () => _stop(),
+            color: Colors.red,
+            splashColor: Colors.redAccent,
           ),
+          new DropdownButton(
+            value: language,
+            items: getDropDownMenuItems(),
+            onChanged: changedDropDownItem,
+          )
         ],
       ),
-    );
-    return new MaterialApp(
-      title: 'Flutter Demo',
-      home: new Scaffold(
-        appBar: new AppBar(
-          title: new Text('Flutter Demo'),
-        ),
-        body: new Center(
-          child: container,
-        ),
-      ),
-    );
-    
-  }
+    )
+  ]);
 }
